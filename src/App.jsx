@@ -1,5 +1,5 @@
 import "./App.css";
-import { List, User, Clock } from "lucide-react";
+import { List, User, Clock, CheckCircle } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -7,6 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 function App() {
   const [tickets, setTickets] = useState([]);
   const [taskStatus, setTaskStatus] = useState([]);
+  const [resolvedTasks, setResolvedTasks] = useState([]);
 
   useEffect(() => {
     fetch("/tickets.json")
@@ -24,10 +25,13 @@ function App() {
     toast.success(`Ticket #${ticket.id} added to Task Status!`);
   };
 
-  // derived values for the dashboard counts
-  const inProgressCount = taskStatus.length;
-  const resolvedCount = tickets.filter((t) => t.status === "Resolved").length;  
+  const completeTask = (ticket) => {
+    setTaskStatus(taskStatus.filter((t) => t.id !== ticket.id));
+    setResolvedTasks([...resolvedTasks, ticket]);
+    setTickets(tickets.filter((t) => t.id !== ticket.id));
 
+    toast.success(`Ticket #${ticket.id} marked as Resolved!`);
+  };
 
   return (
     <>
@@ -79,17 +83,17 @@ function App() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-8 text-white flex flex-col items-center justify-center shadow-lg">
               <h3 className="text-xl font-semibold mb-2">In-Progress</h3>
-              <p className="text-6xl font-bold">{inProgressCount}</p>
+              <p className="text-6xl font-bold">{taskStatus.length}</p>
             </div>
             <div className="bg-gradient-to-r from-emerald-400 to-teal-500 rounded-2xl p-8 text-white flex flex-col items-center justify-center shadow-lg">
               <h3 className="text-xl font-semibold mb-2">Resolved</h3>
-              <p className="text-6xl font-bold">{resolvedCount}</p>
+              <p className="text-6xl font-bold">{resolvedTasks.length}</p>
             </div>
           </div>
         </header>
 
         <main className="px-4 lg:px-20 py-8 grid grid-cols-1 lg:grid-cols-3 gap-10">
-          {/* Left Side: Customer Tickets */}
+          {/* Customer Tickets */}
           <div className="lg:col-span-2">
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
               Customer Tickets
@@ -133,12 +137,67 @@ function App() {
               ))}
             </div>
           </div>
+          <div className="space-y-10">
+            {/* Task Status */}
+            <section>
+              <h2 className="text-xl font-bold mb-4">Task Status</h2>
+              <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm min-h-[150px]">
+                {taskStatus.length === 0 ? (
+                  <p className="text-gray-400 text-sm italic">
+                    Select a ticket to add to Task Status
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {taskStatus.map((task) => (
+                      <div
+                        key={task.id}
+                        className="p-4 bg-gray-50 rounded-lg border border-gray-200"
+                      >
+                        <h4 className="font-bold text-sm mb-3">{task.title}</h4>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            completeTask(task);
+                          }}
+                          className="btn btn-success btn-sm w-full text-white font-bold"
+                        >
+                          Complete
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
 
-
+            {/* Resolved Task */}
+            <section>
+              <h2 className="text-xl font-bold mb-4">Resolved Task</h2>
+              <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm min-h-[150px]">
+                {resolvedTasks.length === 0 ? (
+                  <p className="text-gray-400 text-sm italic">
+                    No resolved tasks yet.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {resolvedTasks.map((task) => (
+                      <div
+                        key={task.id}
+                        className="flex items-center gap-2 text-sm text-gray-600 bg-emerald-50 p-3 rounded-lg border border-emerald-100"
+                      >
+                        <CheckCircle
+                          size={16}
+                          className="text-emerald-500 shrink-0"
+                        />
+                        <span className="font-medium">{task.title}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
         </main>
-
-
-
       </div>
     </>
   );
